@@ -55,10 +55,11 @@ public class GenericRestController<T extends GenericEntity, S extends GenericSer
 
 	@GetMapping
 	public Page<T> findAll(@RequestParam(name = "page", required = false) Integer page,
+			@RequestParam(name = "size", required = false) Integer size, 
 			@RequestParam(name = "filter", required = false) String filter) {
 		
 		Integer p = page != null ? page : 0;
-		Integer s = 10;
+		Integer s = size != null ? size : 10;
 		
 		Pageable pageable = PageRequest.of(p, s);
 		

@@ -111,16 +111,24 @@ public class GenericEntity implements Serializable{
 	
 	@PreUpdate
 	public void preUpdate() throws Exception {
-		setOwner();
+		try {
+			setOwner();
+		} catch(AnonymousUserException e) {
+			this.owner = "anonymousUser";
+		}
 		this.updatedAt = new Date();
 	}
 
 	@PrePersist
-	public void prePersist() throws Exception {
-		setOwner();
+	public void prePersist() {
+		try {
+			setOwner();
+		} catch(AnonymousUserException e) {
+			this.owner = "anonymousUser";
+		}
 	}
 	
-	public void setOwner() throws Exception {
+	public void setOwner() throws AnonymousUserException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth != null && auth.getPrincipal() != null) {
 			if(auth.getPrincipal().equals("anonymousUser")) {

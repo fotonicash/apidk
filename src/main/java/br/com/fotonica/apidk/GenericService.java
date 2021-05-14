@@ -22,6 +22,7 @@ import com.google.gson.internal.LinkedTreeMap;
 import br.com.fotonica.apiql.APIQueryParams;
 import br.com.fotonica.apiql.ObjectToJPQL;
 import br.com.fotonica.exception.NegocioException;
+import br.com.fotonica.util.JSON;
 
 public abstract class GenericService<T extends GenericEntity> {
 	
@@ -44,6 +45,7 @@ public abstract class GenericService<T extends GenericEntity> {
 	@Transactional
 	public void update(T entity) throws NegocioException {
 		em.merge(entity);
+		em.flush();
 	}
 
 	public Optional<T> findById(Integer id) {
@@ -90,14 +92,14 @@ public abstract class GenericService<T extends GenericEntity> {
 
 	public List<T> findAll(APIQueryParams params) {
 		
-		String owner = getOnwerFromSecurityHolder();
-		System.err.println("owner: " + owner);
-		if(hasRoleColab()) {
-			Optional<String> manager = getOnwerFromColabUser();
-			if(!manager.isEmpty()) {
-				owner = manager.get();
-			}
-		}
+//		String owner = getOnwerFromSecurityHolder();
+//		System.err.println("owner: " + owner);
+//		if(hasRoleColab()) {
+//			Optional<String> manager = getOnwerFromColabUser();
+//			if(!manager.isEmpty()) {
+//				owner = manager.get();
+//			}
+//		}
 		
 		ObjectToJPQL objectToJPQL = new ObjectToJPQL();
 
@@ -107,11 +109,11 @@ public abstract class GenericService<T extends GenericEntity> {
 		// query by ativo true by default
 		if (params.getFilter() != null) {
 			params.getFilter().put("ativo", true);
-			params.getFilter().put("owner", owner);
+//			params.getFilter().put("owner", owner);
 		} else {
 			LinkedTreeMap<String, Object> filter = new LinkedTreeMap<String, Object>();
 			filter.put("ativo", true);
-			filter.put("owner", owner);
+//			filter.put("owner", owner);
 			params.setFilter(filter);
 		}
 		
@@ -125,7 +127,12 @@ public abstract class GenericService<T extends GenericEntity> {
 			query.setMaxResults(params.getSize());
 		query.setFirstResult(params.getPage() != null ? params.getPage() * params.getSize() : 0);
 
-		return query.getResultList();
+		List<T> result = query.getResultList();
+//		System.err.println(result);
+//		result.forEach((r)->{
+//			System.err.println(JSON.stringify(r));
+//		});
+		return result;
 	}
 	
 	public long count(APIQueryParams params) {
