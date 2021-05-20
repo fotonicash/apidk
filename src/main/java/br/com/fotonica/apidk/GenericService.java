@@ -14,6 +14,8 @@ import javax.persistence.PersistenceContextType;
 import javax.persistence.Query;
 import javax.transaction.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -22,12 +24,14 @@ import com.google.gson.internal.LinkedTreeMap;
 import br.com.fotonica.apiql.APIQueryParams;
 import br.com.fotonica.apiql.ObjectToJPQL;
 import br.com.fotonica.exception.NegocioException;
-import br.com.fotonica.util.JSON;
+import br.com.fotonica.exception.ResourceNotFoundException;
 
 public abstract class GenericService<T extends GenericEntity> {
 	
-	@PersistenceContext(type = PersistenceContextType.EXTENDED)
+	@PersistenceContext(type = PersistenceContextType.TRANSACTION)
 	EntityManager em;
+	
+	Logger logger = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * CRUD Methods
@@ -36,6 +40,7 @@ public abstract class GenericService<T extends GenericEntity> {
 	 */
 	@Transactional
 	public T save(T entity) throws NegocioException {
+//		logger.info(String.format("save %s", getClass().getName()));
 		validate(entity);
 		em.persist(entity); // anexar entidade ao contexto persistente
 		em.flush();
@@ -43,13 +48,16 @@ public abstract class GenericService<T extends GenericEntity> {
 	}
 	
 	@Transactional
-	public void update(T entity) throws NegocioException {
-		em.merge(entity);
-		em.flush();
+	public T update(T entity) throws NegocioException {
+		T v = em.merge(entity);
+		return v;
 	}
 
-	public Optional<T> findById(Integer id) {
-		return Optional.of(em.getReference(entityClass(), id));
+	public T findById(Integer id) throws ResourceNotFoundException {
+		Class<T> clazz = entityClass();
+		T v = em.find(clazz, id);
+		if(v != null) return v;
+		throw new ResourceNotFoundException(String.format("%s with id %d not found", clazz.getSimpleName(), id));
 	}
 
 //	public boolean existsById(Integer id) {
@@ -91,7 +99,7 @@ public abstract class GenericService<T extends GenericEntity> {
 	}
 
 	public List<T> findAll(APIQueryParams params) {
-		
+		logger.info(String.format("findAll with params %s", params.toString()));
 //		String owner = getOnwerFromSecurityHolder();
 //		System.err.println("owner: " + owner);
 //		if(hasRoleColab()) {
@@ -122,6 +130,10 @@ public abstract class GenericService<T extends GenericEntity> {
 //		System.err.println(jpql);
 		
 		Query query = objectToJPQL.execute(em);
+		// https://wiki.eclipse.org/EclipseLink/Examples/JPA/Caching
+		query.setHint("javax.persistence.cache.storeMode", "REFRESH");
+		query.setHint("eclipselink.refresh", "true");
+
 		
 		if (params.getSize() != null)
 			query.setMaxResults(params.getSize());
@@ -132,6 +144,7 @@ public abstract class GenericService<T extends GenericEntity> {
 //		result.forEach((r)->{
 //			System.err.println(JSON.stringify(r));
 //		});
+		
 		return result;
 	}
 	
@@ -162,6 +175,7 @@ public abstract class GenericService<T extends GenericEntity> {
 //		return repository.findAllById(ids);
 //	}
 
+	@Transactional
 	public void deleteById(Integer id) {
 		T entity = em.getReference(entityClass(), id);
 		em.remove(entity);

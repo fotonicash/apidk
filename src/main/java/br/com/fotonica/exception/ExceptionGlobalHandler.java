@@ -41,7 +41,18 @@ public class ExceptionGlobalHandler {
 		String mensagem = exCausa.getMessage();
 		Erro erro = new Erro(mensagem, ex.getErros());
 		return handleExceptionInternal(ex, erro, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
-    }	
+    }
+	
+	
+	@ExceptionHandler(ResourceNotFoundException.class)
+    protected ResponseEntity<Object> handleResourceNotFound(ResourceNotFoundException ex, WebRequest request){
+		Throwable exCausa = ExceptionUtil.getRootCauseMessage(ex);
+		exCausa.printStackTrace();
+
+		String mensagem = exCausa.getMessage();
+		Erro erro = new Erro(mensagem);
+		return handleExceptionInternal(ex, erro, new HttpHeaders(), HttpStatus.NOT_FOUND, request);
+    }
 	
 	@ExceptionHandler(AnonymousUserException.class)
     protected ResponseEntity<Object> handleInvalidInput(AnonymousUserException ex, WebRequest request){

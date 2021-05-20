@@ -1,7 +1,5 @@
 package br.com.fotonica.apidk;
 
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import br.com.fotonica.apiql.APIQueryParams;
 import br.com.fotonica.exception.NegocioException;
+import br.com.fotonica.exception.ResourceNotFoundException;
 import br.com.fotonica.util.JSON;
 
 @CrossOrigin(origins = "*")
@@ -30,12 +29,13 @@ public class GenericRestController<T extends GenericEntity, S extends GenericSer
 
 	@PostMapping
 	public T save(@RequestBody T entity) throws NegocioException {
+		System.err.println(entity);
 		return service.save(entity);
 	}
 	
 	@PutMapping
-	public void update(@RequestBody T entity) throws NegocioException {
-		service.update(entity);
+	public T update(@RequestBody T entity) throws NegocioException {
+		return service.update(entity);
 	}
 	
 //	@PostMapping("/each")
@@ -44,7 +44,7 @@ public class GenericRestController<T extends GenericEntity, S extends GenericSer
 //	}
 
 	@GetMapping("{id}")
-	public Optional<T> findById(@PathVariable Integer id) {
+	public T findById(@PathVariable Integer id) throws ResourceNotFoundException {
 		return service.findById(id);
 	}
 
